@@ -13,4 +13,4 @@ jobs:
           URL=$(jq -r '.supabaseUrl // ""' public/config.json)
           KEY=$(jq -r '.supabaseAnonKey // ""' public/config.json)
           if [ -z "$URL" ]; then echo "还没配置 Supabase，跳过"; exit 0; fi
-          curl -sS -o /dev/null -w "HTTP %{http_code}\n" "$URL/rest/v1/docs?select=path&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY"
+          curl -sS -o /dev/null -w "HTTP %{http_code}\n" "$URL/rest/v1/docs?select=path&limit=1" -H "apikey: $KEY"

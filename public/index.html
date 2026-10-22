@@ -2687,7 +2687,7 @@ function installStandalone(store) {
       S.local = true; S.mode = 'supabase';
       if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) { S.status = 'nodb'; S.cfgMissing = true; render(true); return; }
       let sb;
-      try { const createClient = window.__lifeosCreateClient || (await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm')).createClient; sb = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'lifeos-auth' } }); }
+      try { const createClient = window.__lifeosCreateClient || (await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm')).createClient; sb = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'lifeos-auth' } }); }
       catch (e) { console.warn(e); S.status = 'nodb'; render(true); return; }
       window.__sb = sb;
       const { data: { session } } = await sb.auth.getSession();

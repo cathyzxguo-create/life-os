@@ -1,5 +1,5 @@
 {
-  "supabaseUrl": "",
-  "supabaseAnonKey": "",
-  "aiRegion": "ap-southeast-1"
+  "supabaseUrl": "https://ejrrmgefhplsfvbylnuf.supabase.co",
+  "supabaseAnonKey": "sb_publishable_DY-vXlTtLakO3Ia9-EZAaQ_IpCpAH2K",
+  "aiRegion": "ap-northeast-1"
 }
