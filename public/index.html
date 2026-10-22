@@ -321,7 +321,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .md ul{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:3px}
 
 /* inputs */
-input[type=text],input[type=number],input[type=date],select,textarea{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:6px 9px;width:100%;min-width:0}
+input[type=text],input[type=number],input[type=date],input[type=email],input[type=password],select,textarea{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:6px 9px;width:100%;min-width:0}
 textarea{resize:vertical;line-height:1.5}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .fbox{display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -1019,14 +1019,14 @@ function render(force) {
 }
 function go(name, id, extra) { S.factsEdit = null; S.view = { name, id, ...(extra || {}) }; S.pf = { sel: '', q: '', limit: 150 }; document.body.classList.remove('side-open'); render(true); window.scrollTo(0, 0); }
 function vState() {
-  if (S.status === 'nodb') return `<div class="inner"><div class="empty" style="margin-top:60px"><b>${S.mode === 'server' ? '连不上服务器' : '数据库没有连上'}</b>${S.mode === 'server' ? '检查一下服务是否在运行、网络是否正常，然后刷新页面。' : S.local ? '这个浏览器不允许本地存储（可能是无痕模式，或直接双击打开的文件被限制）。换 Chrome / Edge 正常窗口打开，或者把文件放到本地服务器上打开。' : '这个页面要在 Claude 里、登录状态下打开，才能保存和读取你的记录。'}</div></div>`;
+  if (S.status === 'nodb') return `<div class="inner"><div class="empty" style="margin-top:60px"><b>${S.cfgMissing ? '还没配置 Supabase' : S.mode === 'server' || S.mode === 'supabase' ? '连不上服务器' : '数据库没有连上'}</b>${S.cfgMissing ? '在仓库的 public/config.json 里填上 Supabase 的项目网址和 publishable（anon）key。' : S.mode === 'server' || S.mode === 'supabase' ? '检查一下网络是否正常，然后刷新页面。' : S.local ? '这个浏览器不允许本地存储（可能是无痕模式，或直接双击打开的文件被限制）。换 Chrome / Edge 正常窗口打开，或者把文件放到本地服务器上打开。' : '这个页面要在 Claude 里、登录状态下打开，才能保存和读取你的记录。'}</div></div>`;
   return `<div class="inner"><div class="loading">正在打开你的 ${YEAR}…</div></div>`;
 }
 function vSide() {
   const v = S.view; const ready = S.status === 'ready';
   const item = (act, attrs, icon, label, on, ind = 0, extra = '') => `<button class="sitem ${on ? 'on' : ''}" style="--ind:${ind}" data-act="${act}" ${attrs}><span class="sicon">${icon}</span><span class="sl">${esc(label)}</span>${extra}</button>`;
   const goals = ready ? activeGoals() : [];
-  return `<div class="ws"><span class="ws-av">M</span><span>Mimi 的 ${YEAR}</span>${S.local ? `<span class="pill c-${S.mode === 'server' ? 'blue' : 'green'}" style="margin-left:auto;font-size:11px">${S.mode === 'server' ? '云端同步' : '本地版'}</span>` : ''}</div>
+  return `<div class="ws"><span class="ws-av">M</span><span>Mimi 的 ${YEAR}</span>${S.local ? `<span class="pill c-${S.mode === 'local' ? 'green' : 'blue'}" style="margin-left:auto;font-size:11px">${S.mode === 'local' ? '本地版' : '云端同步'}</span>` : ''}</div>
   <div class="sgroup">${item('openSearch', '', '⌕', '搜索', false)}${item('go', 'data-v="settings"', '⚙', '设置 · 关于我', v.name === 'settings')}</div>
   <div class="slabel">页面</div>
   <div class="sgroup">
@@ -1348,8 +1348,8 @@ function vSettings() {
       <label class="fbox"><span>快速模型</span><input type="text" id="ai-quick" value="${esc(localAI().quick || '')}" placeholder="claude-haiku-5-5"></label></div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn small primary" data-act="saveAIKey">保存 AI 设置</button><span class="muted" style="font-size:13px">在 console.anthropic.com 申请 Key，按用量付费。</span></div>` : ''}
     <h2 class="bh">数据</h2>
-    <p class="muted" style="font-size:13.5px">${S.mode === 'server' ? '数据存在你自己的服务器上（一个 SQLite 数据库文件 + 图片文件夹），手机和电脑打开同一个网址就能同步。AI 用的是服务器上配置的 Key。' : S.local ? '数据存在这个浏览器里。清除浏览器数据会把它删掉，记得定期导出备份。' : '数据存在 Claude 这个页面自己的数据库里，只有你能看到。想在 Claude 之外用，导出后在本地版或云端版里导入。'}</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="muted num" style="font-size:13.5px">${S.records.length} 条记录 · ${S.goals.length} 个目标 · ${S.panels.length} 个板块</span><button class="btn small" data-act="exportJson">导出全部数据（含图片）</button><button class="btn small" data-act="importJson">导入备份</button>${S.mode === 'server' ? '<button class="btn small ghost" data-act="logout">退出登录</button>' : ''}<button class="btn small ghost" data-act="showRaw">看最近的原话</button>${S.goals.some(g => g.archived) ? '<button class="btn small ghost" data-act="showArchived">已归档目标</button>' : ''}</div>
+    <p class="muted" style="font-size:13.5px">${S.mode === 'supabase' ? '数据存在你自己的 Supabase 项目里（数据库 + 私有图片桶），只有你的账号能读写，手机和电脑打开同一个网址就能同步。AI 用的是 Supabase 里配置的 Key。' : S.mode === 'server' ? '数据存在你自己的服务器上（一个 SQLite 数据库文件 + 图片文件夹），手机和电脑打开同一个网址就能同步。AI 用的是服务器上配置的 Key。' : S.local ? '数据存在这个浏览器里。清除浏览器数据会把它删掉，记得定期导出备份。' : '数据存在 Claude 这个页面自己的数据库里，只有你能看到。想在 Claude 之外用，导出后在本地版或云端版里导入。'}</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="muted num" style="font-size:13.5px">${S.records.length} 条记录 · ${S.goals.length} 个目标 · ${S.panels.length} 个板块</span><button class="btn small" data-act="exportJson">导出全部数据（含图片）</button><button class="btn small" data-act="importJson">导入备份</button>${S.mode === 'server' || S.mode === 'supabase' ? '<button class="btn small ghost" data-act="logout">退出登录</button>' : ''}<button class="btn small ghost" data-act="showRaw">看最近的原话</button>${S.goals.some(g => g.archived) ? '<button class="btn small ghost" data-act="showArchived">已归档目标</button>' : ''}</div>
   </div></div>`;
 }
 
@@ -1393,7 +1393,7 @@ const VIEWS = { dash: vDash, goal: vGoal, panel: vPanel, book: vBook, settings: 
 /* ============ AI 公共 ============ */
 function aiErr(e) {
   const c = e && e.code;
-  if (S.local && c === 'not_granted') { if (e?.message === 'no_server_key') return '服务器还没配置 ANTHROPIC_API_KEY，配置后重启服务。'; if (S.mode === 'server') return '服务器上的 API Key 无效，检查一下 ANTHROPIC_API_KEY。'; return e?.message === 'bad_key' ? 'API Key 无效，到「设置」里检查一下。' : '先在「设置 · 关于我」最下面填你的 Claude API Key。'; }
+  if (S.local && c === 'not_granted') { if (e?.message === 'no_server_key') return S.mode === 'supabase' ? 'Supabase 里还没设置 ANTHROPIC_API_KEY 密钥。' : '服务器还没配置 ANTHROPIC_API_KEY，配置后重启服务。'; if (S.mode === 'server' || S.mode === 'supabase') return '服务器上的 API Key 无效，检查一下 ANTHROPIC_API_KEY。'; return e?.message === 'bad_key' ? 'API Key 无效，到「设置」里检查一下。' : '先在「设置 · 关于我」最下面填你的 Claude API Key。'; }
   if (c === 'not_granted' || c === 'sampling_disabled' || c === 'not_declared') return '这个页面没有被允许使用 Claude，AI 功能用不了。';
   if (c === 'rate_limited') return '请求太频繁或用量到上限了，过一会儿再试。';
   if (c === 'prompt_too_large') return '内容太长了，分几次来。';
@@ -2346,9 +2346,15 @@ const ACT = {
     el.disabled = false; el.textContent = '导出全部数据（含图片）';
   },
   importJson: () => $('#import-file').click(),
-  logout: async () => { try { await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }); } catch (e) {} location.reload(); },
+  logout: async () => { try { if (S.mode === 'supabase') await window.__sb?.auth.signOut(); else await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }); } catch (e) {} location.reload(); },
   login: async el => {
     const pw = $('#login-pw').value; if (!pw) return; el.disabled = true; const st = $('#login-st');
+    if (S.mode === 'supabase') {
+      const email = ($('#login-email')?.value || '').trim();
+      try { const { error } = await window.__sb.auth.signInWithPassword({ email, password: pw }); if (!error) { location.reload(); return; } st.textContent = /rate|many/i.test(error.message) ? '试得太频繁了，过几分钟再试。' : '邮箱或密码不对。'; }
+      catch (e) { st.textContent = '连不上 Supabase。'; }
+      el.disabled = false; return;
+    }
     try { const r = await fetch('/api/login', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password: pw }) });
       if (r.ok) { location.reload(); return; } st.textContent = r.status === 429 ? '错得太多次了，15 分钟后再试。' : '密码不对。'; }
     catch (e) { st.textContent = '连不上服务器。'; }
@@ -2448,7 +2454,7 @@ async function aiResult(r, authMsg) {
   if (r.ok) return r.json();
   const t = await r.text().catch(() => ''); let j = {}; try { j = JSON.parse(t); } catch (e) {}
   if (j.error === 'no_server_key') throw { code: 'not_granted', message: 'no_server_key' };
-  if (r.status === 401 && j.error === 'login') { showLogin(); throw { code: 'session_expired', message: 'login' }; }
+  if (r.status === 401 && (j.error === 'login' || (S.mode === 'supabase' && typeof j.error !== 'object'))) { showLogin(); throw { code: 'session_expired', message: 'login' }; }
   const code = r.status === 401 || r.status === 403 ? 'not_granted' : r.status === 429 || r.status === 529 ? 'rate_limited' : r.status === 400 || r.status === 413 ? 'invalid_request' : 'upstream_error';
   throw { code, message: code === 'not_granted' ? authMsg : t.slice(0, 300) };
 }
@@ -2499,12 +2505,91 @@ function serverStore() {
     }
   };
 }
+function sbStore(sb, uid, cfg) {
+  let since = 0; const pathSeq = new Map(); const pending = new Set(); const signed = new Map(); const asking = new Set();
+  const fail = e => { const m = String(e?.message || e || ''); if (e?.status === 401 || /jwt|not authenticated/i.test(m)) { showLogin(); return { code: 'revoked', message: 'login' }; } return { code: /too large|exceed/i.test(m) ? 'quota_exceeded' : 'unavailable', message: m.slice(0, 200) }; };
+  const bpath = id => `${uid}/${id}`;
+  const imgIds = v => { const out = []; if (v && typeof v === 'object') for (const k of ['cover', 'vision']) if (imgOk(v[k])) out.push(v[k]); return out; };
+  async function ensureUrls(ids) {
+    const need = [...new Set(ids)].filter(id => imgOk(id) && !signed.has(id) && !asking.has(id)); if (!need.length) return;
+    need.forEach(id => asking.add(id));
+    try {
+      const { data, error } = await sb.storage.from('blobs').createSignedUrls(need.map(bpath), 60 * 60 * 24 * 7);
+      if (!error && data) { let any = false; data.forEach((d, i) => { if (d?.signedUrl) { signed.set(need[i], d.signedUrl); any = true; } }); if (any && S.status === 'ready') render(); }
+    } catch (e) {}
+    need.forEach(id => asking.delete(id));
+  }
+  return {
+    kind: 'supabase',
+    async load() {
+      const out = new Map();
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await sb.from('docs').select('path,data,seq').eq('deleted', false).order('path').range(from, from + 999);
+        if (error) throw fail(error);
+        for (const r of data) { out.set(r.path, r.data); if (r.seq > since) since = r.seq; }
+        if (data.length < 1000) break;
+      }
+      const { data: mx } = await sb.from('docs').select('seq').order('seq', { ascending: false }).limit(1);
+      if (mx?.[0]) since = Math.max(since, mx[0].seq);
+      await ensureUrls([...out.values()].flatMap(imgIds));
+      return out;
+    },
+    async save(path, data) {
+      pending.add(path);
+      try {
+        const row = data === undefined ? { user_id: uid, path, data: null, deleted: true } : { user_id: uid, path, data, deleted: false };
+        const { data: res, error } = await sb.from('docs').upsert(row, { onConflict: 'user_id,path' }).select('seq').single();
+        if (error) throw fail(error);
+        pathSeq.set(path, res.seq);
+      } finally { pending.delete(path); }
+    },
+    async upload(blob) {
+      const id = newBlobId();
+      const { error } = await sb.storage.from('blobs').upload(bpath(id), blob, { contentType: blob.type || 'application/octet-stream', upsert: false });
+      if (error) throw fail(error);
+      const { data } = await sb.storage.from('blobs').createSignedUrl(bpath(id), 60 * 60 * 24 * 7);
+      const url = data?.signedUrl || URL.createObjectURL(blob); signed.set(id, url);
+      return { id, url };
+    },
+    async removeBlob(id) { await sb.storage.from('blobs').remove([bpath(id)]); signed.delete(id); },
+    blobUrl(id) { const u = signed.get(id); if (!u) ensureUrls([id]); return u || ''; },
+    async ai(body, signal) {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { showLogin(); throw { code: 'session_expired', message: 'login' }; }
+      let r;
+      try { r = await fetch(cfg.supabaseUrl.replace(/\/$/, '') + '/functions/v1/ai', { method: 'POST', signal, headers: { 'content-type': 'application/json', Authorization: 'Bearer ' + session.access_token, apikey: cfg.supabaseAnonKey, 'x-region': cfg.aiRegion || 'ap-southeast-1' }, body: JSON.stringify(body) }); }
+      catch (e) { if (e?.name === 'AbortError') throw { code: 'cancelled', message: 'aborted' }; throw { code: 'upstream_error', message: String(e) }; }
+      return aiResult(r, 'server_key');
+    },
+    startSync(apply) {
+      let busy = false;
+      const tick = async () => {
+        if (busy || document.hidden) return; busy = true;
+        try {
+          let more = true;
+          while (more) {
+            const { data, error } = await sb.from('docs').select('path,data,deleted,seq').gt('seq', since).order('seq').limit(1000);
+            if (error) break;
+            const changes = data.filter(c => !pending.has(c.path) && !(pathSeq.get(c.path) >= c.seq)).map(c => ({ path: c.path, seq: c.seq, data: c.deleted ? null : c.data }));
+            if (changes.length) { apply(changes); ensureUrls(changes.flatMap(c => imgIds(c.data))); }
+            if (data.length) since = data[data.length - 1].seq;
+            more = data.length === 1000;
+          }
+        } catch (e) {}
+        busy = false;
+      };
+      setInterval(tick, 5000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+      window.addEventListener('focus', tick);
+    }
+  };
+}
 function showLogin() {
   if (S.status === 'login') return; S.status = 'login';
   document.body.classList.remove('side-open');
   $('#side').innerHTML = `<div class="ws"><span class="ws-av">M</span><span>Mimi 的 ${YEAR}</span></div>`; $('#crumbs').innerHTML = ''; $('#top-cap').hidden = true; $('#fab').hidden = true;
   $('#main').innerHTML = `<div class="inner narrow"><div class="phead"><div class="picon nocover">🎀</div><h1 class="ptitle">欢迎回来</h1><p class="pdesc">输入密码打开你的生活 OS。登录一次，这台设备会记住一年。</p></div>
-    <div style="display:flex;gap:8px;margin-top:20px;max-width:420px"><input type="password" id="login-pw" autocomplete="current-password" placeholder="密码"><button class="btn primary" id="login-go" data-act="login">登录</button></div><p class="muted" id="login-st" style="margin-top:8px;font-size:13.5px"></p></div>`;
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px;max-width:420px">${S.mode === 'supabase' ? '<input type="email" id="login-email" autocomplete="username" placeholder="邮箱">' : ''}<div style="display:flex;gap:8px"><input type="password" id="login-pw" autocomplete="current-password" placeholder="密码"><button class="btn primary" id="login-go" data-act="login">登录</button></div></div><p class="muted" id="login-st" style="margin-top:8px;font-size:13.5px"></p></div>`;
   setTimeout(() => { try { $('#login-pw').focus(); } catch (e) {} }, 30);
 }
 function installStandalone(store) {
@@ -2596,6 +2681,21 @@ function installStandalone(store) {
 }
 (async () => {
   if (!window.claude || typeof window.claude.use !== 'function') {
+    let cfg = null;
+    if (/^https?:$/.test(location.protocol)) { try { const r = await fetch('config.json', { cache: 'no-store' }); if (r.ok && (r.headers.get('content-type') || '').includes('json')) cfg = await r.json(); } catch (e) {} }
+    if (cfg && typeof cfg === 'object' && 'supabaseUrl' in cfg) {
+      S.local = true; S.mode = 'supabase';
+      if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) { S.status = 'nodb'; S.cfgMissing = true; render(true); return; }
+      let sb;
+      try { const createClient = window.__lifeosCreateClient || (await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm')).createClient; sb = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'lifeos-auth' } }); }
+      catch (e) { console.warn(e); S.status = 'nodb'; render(true); return; }
+      window.__sb = sb;
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { showLogin(); return; }
+      installStandalone(sbStore(sb, session.user.id, cfg));
+      sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') location.reload(); });
+      boot(); return;
+    }
     let mode = 'local';
     if (/^https?:$/.test(location.protocol)) {
       try { const r = await fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' }); if (r.status === 200 && (r.headers.get('content-type') || '').includes('json')) mode = 'server'; else if (r.status === 401 && (r.headers.get('content-type') || '').includes('json')) mode = 'login'; } catch (e) {}

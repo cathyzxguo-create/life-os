@@ -1,0 +1,16 @@
+name: 保持 Supabase 不休眠
+on:
+  schedule:
+    - cron: '17 1 * * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 访问一次数据库
+        run: |
+          URL=$(jq -r '.supabaseUrl // ""' public/config.json)
+          KEY=$(jq -r '.supabaseAnonKey // ""' public/config.json)
+          if [ -z "$URL" ]; then echo "还没配置 Supabase，跳过"; exit 0; fi
+          curl -sS -o /dev/null -w "HTTP %{http_code}\n" "$URL/rest/v1/docs?select=path&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY"

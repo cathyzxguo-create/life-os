@@ -1,15 +1,39 @@
-# 生活 OS · 后端
+# 生活 OS
 
-一个密码、一个 SQLite 数据库文件、一个图片文件夹。手机和电脑打开同一个网址就能同步，AI 的 Key 放在服务器上，前端不用填。
+一个 Notion 风格的年度目标与生活记录系统，带 AI 录入、教练问诊和私人 AI 顾问。同一个页面支持四种运行方式，打开时自动识别：
 
-## 数据在哪
+| 打开方式 | 数据存在 |
+|---|---|
+| 在 Claude 里打开 | Claude 的数据库 |
+| **Vercel 网址（推荐，免费）** | **你自己的 Supabase 项目** |
+| 自己的服务器（`server.mjs`） | 服务器上的 SQLite 文件 |
+| 直接双击 `public/index.html` | 这个浏览器 |
 
-全部在 `data/` 文件夹：
+## 免费云端版：Supabase + Vercel
 
-- `data/life-os.db`：所有板块、记录、目标、档案（SQLite，任何 SQLite 工具都能打开）
-- `data/blobs/`：封面、愿景图等图片
+### 1. Supabase（数据库、图片、登录、AI 代理）
 
-**备份 = 复制整个 `data/` 文件夹。** 页面「设置 → 导出全部数据」也能导出一份 JSON（含图片）。
+1. supabase.com 新建项目，Region 选 **Southeast Asia (Singapore)**。
+2. **SQL Editor** → 粘贴 `supabase/setup.sql` 全文 → Run。
+3. **Authentication → Users → Add user → Create new user**：填你的邮箱和密码，勾选 Auto Confirm User。
+4. **Authentication → Sign In / Providers → Email**：关掉 Allow new users to sign up（防止别人注册）。
+5. **Edge Functions → Deploy a new function → Via Editor**：函数名填 `ai`，把 `supabase/functions/ai/index.ts` 全文粘进去 → Deploy。
+6. **Edge Functions → Secrets**：添加 `ANTHROPIC_API_KEY`（你的 Claude API Key）和 `OWNER_EMAIL`（第 3 步的邮箱）。
+7. **Project Settings → API**：复制 Project URL 和 publishable（或 anon）key，填进 `public/config.json`。这两个值本来就是公开给前端用的，数据靠行级安全保护。
+
+### 2. Vercel（放页面）
+
+Add New Project → Import 这个仓库 → 直接 Deploy（`vercel.json` 已配好，不需要构建）。手机打开网址登录后，分享 → 添加到主屏幕。
+
+### 3. 保持不休眠
+
+Supabase 免费项目 7 天没有访问会暂停。`.github/workflows/keepalive.yml` 每天自动访问一次。如果项目还是被暂停了，去 Supabase 后台点 Restore 即可，数据不会丢。
+
+### 数据和备份
+
+数据在 Supabase 的 `docs` 表和 `blobs` 存储桶里，只有你的账号能读写。页面「设置 → 导出全部数据」随时导出一份含图片的 JSON 备份。
+
+## 自建服务器版
 
 ## 本机试运行（需要 Node 22.5 以上）
 
